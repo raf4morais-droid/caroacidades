@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: sigweb-db
+    environment:
+      POSTGRES_DB: sigweb
+      POSTGRES_USER: sigweb
+      POSTGRES_PASSWORD: sigweb_local
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sigweb -d sigweb']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pg_tileserv:
+    image: ghcr.io/crunchydata/pg_tileserv:latest
+    container_name: sigweb-tileserv
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://sigweb:sigweb_local@db:5432/sigweb
+    ports:
+      - '7800:7800'
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: sigweb-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://sigweb:sigweb_local@db:5432/sigweb
+      CORS_ORIGIN: http://localhost:5173
+      FIREBASE_SERVICE_ACCOUNT_JSON: '${FIREBASE_SERVICE_ACCOUNT_JSON}'
+      FIREBASE_STORAGE_BUCKET: '${FIREBASE_STORAGE_BUCKET}'
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./apps/api/src:/app/src  # Hot reload em dev
+
+volumes:
+  pgdata:

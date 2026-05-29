@@ -1,0 +1,51 @@
+{
+  "name": "@sigweb/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@sigweb/shared": "*",
+    "@tanstack/react-query": "^5.35.1",
+    "axios": "^1.7.2",
+    "firebase": "^10.12.0",
+    "leaflet": "^1.9.4",
+    "leaflet-draw": "^1.0.4",
+    "@geoman-io/leaflet-geoman-free": "^2.16.0",
+    "proj4": "^2.11.0",
+    "proj4leaflet": "^1.0.2",
+    "@mapbox/vector-tile": "^1.3.1",
+    "pbf": "^3.3.0",
+    "turf": "^6.5.0",
+    "@turf/turf": "^6.5.0",
+    "recharts": "^2.12.7",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
+    "xlsx": "^0.18.5",
+    "bpmn-js": "^17.6.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.1",
+    "zustand": "^4.5.2",
+    "zod": "^3.23.6",
+    "react-hot-toast": "^2.4.1",
+    "date-fns": "^3.6.0",
+    "react-hook-form": "^7.51.5"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.12",
+    "@types/leaflet-draw": "^1.0.11",
+    "@types/proj4": "^2.5.5",
+    "@types/pbf": "^3.0.5",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}
