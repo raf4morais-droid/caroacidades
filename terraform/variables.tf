@@ -31,3 +31,15 @@ variable "firebase_service_account" {
   type        = string
   sensitive   = true
 }
+
+variable "web_env_production" {
+  description = "Conteúdo do apps/web/.env.production usado pelo build do frontend no Cloud Build"
+  type        = string
+  sensitive   = true
+}
+
+variable "firebase_ci_token" {
+  description = "Token gerado por `firebase login:ci` (projeto Firebase caroacidades), usado pelo cloudbuild-web.yaml para deploy no Hosting"
+  type        = string
+  sensitive   = true
+}
