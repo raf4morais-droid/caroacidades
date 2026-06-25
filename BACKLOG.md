@@ -9,7 +9,9 @@
 | ❌ | Não implementado |
 | 🔴 | Crítico — prazo contratual |
 
-**Última atualização:** 2026-06-18 (sessão 36 — **3D: volume + corte em seção (req 232 🔶→✅)**: `PointCloudViewer.tsx` ampliado com: (a) modo "✂ Perfil" — 2 cliques definem seção, filtra pontos por corredor adaptativo (`t × perp` no plano XZ), ordena e exibe gráfico canvas 160px (pts 1px, eixos, labels de distância/elevação); (b) volume no fechamento de polígono — `pipXZ` (ray-casting) identifica pontos dentro, `area × avg(height - base)` → resultado em m³; req 232 promovido a ✅ (distância+área+volume+seção). `tsc --noEmit` ok. Score global **91,5%→91,7%** (214,5/234 — +0,5 pts). Deploy pendente.
+**Última atualização:** 2026-06-25 (sessão 37 — **CI/CD do frontend automatizado (deploy Firebase Hosting via Cloud Build)**: `cloudbuild-web.yaml` criado (build do monorepo + `tsc && vite build` + `firebase-tools deploy --only hosting`, secrets via Secret Manager `web-env-production`/`firebase-ci-token`, IAM `secretAccessor` escopado ao SA do Cloud Build); trigger `deploy-web-main` criado via `gcloud builds triggers create github --service-account=...` — resolve o bug `INVALID_ARGUMENT` da sessão anterior (faltava o SA explícito); testado end-to-end: build `e9691cd0` SUCCESS, site `https://caroacidades.web.app` no ar (HTTP 200). Push para `main` agora builda+publica API e Web automaticamente. Não altera score do edital — infraestrutura, mesmo critério do SINTER.)
+
+Sessão anterior 36 — **3D: volume + corte em seção (req 232 🔶→✅)**: `PointCloudViewer.tsx` ampliado com: (a) modo "✂ Perfil" — 2 cliques definem seção, filtra pontos por corredor adaptativo (`t × perp` no plano XZ), ordena e exibe gráfico canvas 160px (pts 1px, eixos, labels de distância/elevação); (b) volume no fechamento de polígono — `pipXZ` (ray-casting) identifica pontos dentro, `area × avg(height - base)` → resultado em m³; req 232 promovido a ✅ (distância+área+volume+seção). `tsc --noEmit` ok. Score global **91,5%→91,7%** (214,5/234 — +0,5 pts). Deploy pendente.
 
 Sessão anterior 33 — **req 06 completo + painel camadas fixo + eas.json**: (1) req 06 `🔶→✅` — busca do mapa agora inclui Loteamentos e Quadras: `/loteamentos?q=` passa a retornar `geometry`; `/quadras?q=` criado com filtro por código; `MapPage.handleSearch` faz 4 calls paralelas e combina resultados em 5 categorias coloridas (Bairro roxo, Loteamento âmbar, Logradouro ciano, Quadra verde-azul, Parcela azul); zoom adaptado por tipo; (2) `LayerControl.tsx` refatorado como painel lateral fixo à direita com seta `›`/`‹` de colapso (substituiu botão flutuante `🗂 Camadas`); `CamadasPanel.tsx` movido para borda esquerda; (3) `eas.json` criado nos 3 apps móveis (MA/MB/MC) com perfis `development`/`preview` (APK) e `production` (AAB) — habilita `eas build --platform android --profile preview` para gerar APK de teste; (4) linhas de score G/L/R atualizadas no corpo do BACKLOG (estavam com valores da sessão 30). Score global **89,3%** (inalterado — req 06 já contava ✅, busca foi completada; eas.json é infra de build). `tsc --noEmit` ok em `apps/api` e `apps/web`.
 
@@ -160,6 +162,10 @@ Sessao 23 (+0,5 pt): Módulo M (Gestão App Móvel — Web) fechado em 100% — 
   imediatamente com o parecer dessa etapa, sem aguardar as demais etapas pendentes. Score M
   98%→100% (26✅=26/26). Score global 84,8%→85,0% (170✅+58🔶+6❌=199,0/234). `tsc --noEmit`
   ok em `apps/api` e `apps/web`; `vite build` ok.
+Sessao 37 (+0,0 pts): CI/CD do frontend automatizado — trigger `deploy-web-main` (push main →
+  npm ci/build → deploy Firebase Hosting `caroacidades.web.app` via `firebase-tools`, token em
+  Secret Manager); infraestrutura, não conta nos 234 req do edital (mesmo critério do SINTER,
+  sessão 10).
 Sessao 24 (+0,5 pt): Módulo N (Numeração Predial) fechado em 100% — req 102 🔶→✅
   (listar cadastros de cada parcela e exibir faixa de numeração para escolha manual): na
   etapa "confirmar" de `NumeracaoPredialPage`, a coluna "Nº gerado" passa a ser um campo
@@ -704,8 +710,8 @@ Sessao 28 (+1,0 pt): Módulos P/H (Processo Digital — Aprovação/Habite-se) 9
 | ✅ | Backup diário Cloud SQL configurado | ✅ | ✅ |
 | ✅ | CORS configurado para `caroacidades.web.app` | ✅ | 🔶 |
 | ✅ | Mapillary token configurado (`VITE_MAPILLARY_TOKEN` em `.env.local` + `.env.production`) | ✅ | ✅ |
-| ❌ | Firebase Hosting site criado (`firebase hosting:sites:create`) — requer `firebase login --reauth` | ❌ | ❌ |
-| ❌ | CI/CD — Cloud Build trigger push main → deploy automático | ❌ | ❌ |
+| ✅ | Firebase Hosting site criado (projeto `caroacidades`, conta `devrafamorais@gmail.com`) | ✅ | ✅ |
+| ✅ | CI/CD — Cloud Build trigger push main → deploy automático (API `deploy-api-main` + Web `deploy-web-main`) | ✅ | ✅ |
 | ❌ | `firebase.tf` — IaC do Firebase Hosting | ❌ | ❌ |
 | ❌ | `cdn.tf` — Cloud CDN + Load Balancer | ❌ | ❌ |
 | ❌ | `VITE_POTREE_URL` — URL do Potree Viewer no GCS | ❌ | ❌ |
