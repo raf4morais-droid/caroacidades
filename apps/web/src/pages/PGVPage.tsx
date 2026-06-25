@@ -6,9 +6,11 @@ import {
 } from 'recharts'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
+import { SIGMap } from '../components/map/SIGMap'
+import { PgvSetoresLayer } from '../components/map/PgvSetoresLayer'
 
 export function PGVPage() {
-  const [tab, setTab] = useState<'setores' | 'amostras' | 'simulacao'>('setores')
+  const [tab, setTab] = useState<'setores' | 'mapa' | 'amostras' | 'simulacao'>('setores')
   const [setorSelecionado, setSetorSelecionado] = useState<string | null>(null)
   const qc = useQueryClient()
 
@@ -45,7 +47,7 @@ export function PGVPage() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', background: 'white', flexShrink: 0 }}>
-        {(['setores', 'amostras', 'simulacao'] as const).map(t => (
+        {(['setores', 'mapa', 'amostras', 'simulacao'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -57,11 +59,17 @@ export function PGVPage() {
               marginBottom: -2,
             }}
           >
-            {{ setores: 'Setores PGV', amostras: 'Amostras e Regressão', simulacao: 'Simulação IPTU' }[t]}
+            {{ setores: 'Setores PGV', mapa: 'Mapa', amostras: 'Amostras e Regressão', simulacao: 'Simulação IPTU' }[t]}
           </button>
         ))}
       </div>
 
+      {tab === 'mapa' ? (
+        <div style={{ flex: 1, position: 'relative' }}>
+          <SIGMap compact />
+          <PgvSetoresLayer />
+        </div>
+      ) : (
       <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
         {tab === 'setores' && (
           <div>
@@ -139,6 +147,7 @@ export function PGVPage() {
           <SimulacaoIPTU />
         )}
       </div>
+      )}
     </div>
   )
 }

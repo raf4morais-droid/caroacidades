@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "SIGWEB Chamados",
+    "slug": "sigweb-chamados",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.gov.tupanciretta.sigweb.chamados",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização para posicionar o marcador da solicitação no mapa.",
+        "NSPhotoLibraryUsageDescription": "Permite anexar fotos às solicitações.",
+        "NSCameraUsageDescription": "Permite tirar fotos para anexar às solicitações."
+      }
+    },
+    "android": {
+      "package": "br.gov.tupanciretta.sigweb.chamados",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos sua localização para posicionar o marcador da solicitação no mapa."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite anexar fotos às solicitações.",
+          "cameraPermission": "Permite tirar fotos para anexar às solicitações."
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://sigweb-api-dev-357570346826.us-east1.run.app"
+    }
+  }
+}

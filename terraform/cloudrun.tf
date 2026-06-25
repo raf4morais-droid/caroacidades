@@ -9,6 +9,8 @@ resource "google_cloud_run_v2_service" "api" {
   ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
+    service_account = google_service_account.api.email
+
     scaling {
       min_instance_count = var.environment == "prod" ? 2 : 0
       max_instance_count = 50
@@ -40,15 +42,23 @@ resource "google_cloud_run_v2_service" "api" {
 
       env {
         name  = "NODE_ENV"
-        value = var.environment == "prod" ? "production" : "development"
+        value = "production"
+      }
+      env {
+        name  = "CORS_ORIGIN"
+        value = "https://caroacidades.web.app,https://caroacidades.firebaseapp.com"
       }
       env {
         name  = "DATABASE_URL"
         value = "postgresql://sigweb:${var.db_password}@/sigweb?host=/cloudsql/${local.cloud_sql_connection}"
       }
       env {
+        name  = "FIREBASE_PROJECT_ID"
+        value = "caroacidades"
+      }
+      env {
         name  = "FIREBASE_STORAGE_BUCKET"
-        value = "${var.project_id}.appspot.com"
+        value = "caroacidades.firebasestorage.app"
       }
       env {
         name = "FIREBASE_SERVICE_ACCOUNT_JSON"
@@ -76,7 +86,7 @@ resource "google_cloud_run_v2_service" "tileserv" {
 
   template {
     scaling {
-      min_instance_count = 1
+      min_instance_count = 0
       max_instance_count = 10
     }
 
@@ -93,7 +103,9 @@ resource "google_cloud_run_v2_service" "tileserv" {
     }
 
     containers {
-      image = "ghcr.io/crunchydata/pg_tileserv:latest"
+      image = "docker.io/pramsey/pg_tileserv:latest"
+
+      ports { container_port = 7800 }
 
       resources {
         limits = {

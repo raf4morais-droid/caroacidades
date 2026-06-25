@@ -1,9 +1,18 @@
+# Workspace gitignore
+
+# Ignore local Terraform env with secrets
+/terraform/.env
+
+# Node modules and build outputs
+node_modules/
+apps/web/dist/
 node_modules/
 dist/
 build/
 .env
 .env.local
 .env.*.local
+.env.production
 *.log
 .DS_Store
 .terraform/

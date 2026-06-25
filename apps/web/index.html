@@ -4,7 +4,35 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SIGWEB — Tupanciretã</title>
+    <title>Caroá Cidades Inteligentes — SIGWEB</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <!-- auto-refresh: detecta bundle desatualizado e recarrega para URL versionada -->
+    <script>
+      (function () {
+        var KEY = 'sw_ver';
+        var qs = location.search;
+        // Se já veio de um redirect de versão, apenas persiste e segue
+        if (qs && qs.indexOf('_v=') !== -1) {
+          var nv = qs.replace(/.*_v=([^&]*).*/, '$1');
+          localStorage.setItem(KEY, nv);
+          return;
+        }
+        fetch('/version.json?_=' + Date.now(), { cache: 'no-store' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var prev = localStorage.getItem(KEY);
+            if (prev && prev !== d.v) {
+              localStorage.setItem(KEY, d.v);
+              location.replace(location.pathname + '?_v=' + d.v);
+            } else {
+              localStorage.setItem(KEY, d.v);
+            }
+          })
+          .catch(function () {});
+      })();
+    </script>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"

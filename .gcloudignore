@@ -1,0 +1,23 @@
+# Ignore all node_modules recursively
+**/node_modules/
+
+# Ignore all dist folders except apps/web/dist (since it is copied in Dockerfile)
+apps/api/dist/
+packages/*/dist/
+
+# Ignore terraform files recursively
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Ignore expo cache recursively
+**/.expo/
+**/.*expo/
+
+# Ignore other files
+**/.git/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store

@@ -23,19 +23,19 @@ resource "google_storage_bucket" "geodata" {
 resource "google_storage_bucket_object" "ortomosaico_placeholder" {
   name    = "ortomosaico/.gitkeep"
   bucket  = google_storage_bucket.geodata.name
-  content = ""
+  content = "placeholder"
 }
 
 resource "google_storage_bucket_object" "potree_placeholder" {
   name    = "potree/.gitkeep"
   bucket  = google_storage_bucket.geodata.name
-  content = ""
+  content = "placeholder"
 }
 
 resource "google_storage_bucket_object" "imageamento360_placeholder" {
   name    = "imageamento360/.gitkeep"
   bucket  = google_storage_bucket.geodata.name
-  content = ""
+  content = "placeholder"
 }
 
 # Leitura pública para tiles e orto-mosaico

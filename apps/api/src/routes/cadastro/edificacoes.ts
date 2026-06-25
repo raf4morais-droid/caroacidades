@@ -1,8 +1,49 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { query, queryOne } from '../../db/pool'
+import { utils, write } from 'xlsx'
 import { authMiddleware } from '../../middleware/auth.middleware'
 import { requireRole } from '../../middleware/rbac.middleware'
+
+const EXPORT_FORMATS = ['csv', 'xml', 'xlsx'] as const
+
+type ExportFormat = (typeof EXPORT_FORMATS)[number]
+
+function escapeCsv(value: unknown) {
+  const text = value == null ? '' : String(value)
+  return `"${text.replace(/"/g, '""')}"`
+}
+
+function toCsv(rows: Record<string, unknown>[]) {
+  if (!rows.length) return ''
+  const headers = Object.keys(rows[0])
+  const lines = [headers.map(escapeCsv).join(',')]
+  for (const row of rows) {
+    lines.push(headers.map((key) => escapeCsv(row[key])).join(','))
+  }
+  return lines.join('\r\n')
+}
+
+function toXml(rootName: string, rows: Record<string, unknown>[]) {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+  xml += `<${rootName}>\n`
+  for (const row of rows) {
+    xml += '  <row>\n'
+    for (const [key, value] of Object.entries(row)) {
+      xml += `    <${key}>${value == null ? '' : String(value)}</${key}>\n`
+    }
+    xml += '  </row>\n'
+  }
+  xml += `</${rootName}>\n`
+  return xml
+}
+
+function toXlsx(rows: Record<string, unknown>[]) {
+  const worksheet = utils.json_to_sheet(rows)
+  const workbook = utils.book_new()
+  utils.book_append_sheet(workbook, worksheet, 'export')
+  return write(workbook, { bookType: 'xlsx', type: 'buffer' })
+}
 
 const edificacaoSchema = z.object({
   inscricaoImobiliaria: z.string().optional(),
@@ -32,8 +73,67 @@ const importMobileSchema = z.array(z.object({
   coletadoEm: z.string().optional(),
 }))
 
+// Cria notificações de irregularidade para ADMIN/FISCAL_TRIBUTARIO (req 27)
+async function notificarIrregularidade(edificacaoId: string, autorUid: string) {
+  const usuarios = await query<{ id: string }>(
+    `SELECT id FROM sigweb.usuarios WHERE perfil IN ('ADMIN', 'FISCAL_TRIBUTARIO') AND ativo = true`
+  )
+  const edificacao = await queryOne<{ inscricao_imobiliaria: string | null; numero_predial: string | null }>(
+    `SELECT inscricao_imobiliaria, numero_predial FROM sigweb.edificacoes WHERE id = $1`,
+    [edificacaoId]
+  )
+  const ref = edificacao?.inscricao_imobiliaria || edificacao?.numero_predial || edificacaoId.slice(0, 8)
+  for (const u of usuarios) {
+    await query(
+      `INSERT INTO sigweb.notificacoes (usuario_id, tipo, titulo, conteudo, referencia_id, criado_por)
+       VALUES ($1, 'irregularidade_edificacao', 'Edificação marcada como irregular',
+               $2, $3, $4)`,
+      [u.id, `A edificação ${ref} foi marcada como irregular e aguarda providências.`, edificacaoId, autorUid]
+    )
+  }
+}
+
 export async function edificacoesRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware)
+
+  // Listar edificações com busca/filtro/paginação (req 20/21)
+  app.get('/edificacoes', async (request) => {
+    const { q = '', situacao, parcela_id, page = '1', limit = '50' } = request.query as Record<string, string>
+    const offset = (Number(page) - 1) * Number(limit)
+
+    const where: string[] = []
+    const params: unknown[] = []
+    let i = 1
+
+    if (q.trim()) {
+      where.push(`(e.inscricao_imobiliaria ILIKE $${i} OR e.numero_predial ILIKE $${i} OR e.cadastro_imobiliario ILIKE $${i} OR p.codigo ILIKE $${i})`)
+      params.push(`%${q.trim()}%`)
+      i++
+    }
+    if (situacao) { where.push(`e.situacao = $${i++}`); params.push(situacao) }
+    if (parcela_id) { where.push(`e.parcela_id = $${i++}`); params.push(parcela_id) }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
+
+    const rows = await query(
+      `SELECT e.id, e.inscricao_imobiliaria, e.cadastro_imobiliario, e.area_construida,
+              e.parcela_id, e.proprietario_id, e.face_quadra, e.numero_predial, e.situacao,
+              p.codigo AS parcela_codigo, pe.nome AS proprietario_nome
+       FROM sigweb.edificacoes e
+       LEFT JOIN sigweb.parcelas p ON p.id = e.parcela_id
+       LEFT JOIN sigweb.pessoas pe ON pe.id = e.proprietario_id
+       ${whereSql}
+       ORDER BY e.created_at DESC
+       LIMIT $${i} OFFSET $${i + 1}`,
+      [...params, Number(limit), offset]
+    )
+
+    const [{ count }] = await query<{ count: string }>(
+      `SELECT COUNT(*) FROM sigweb.edificacoes e LEFT JOIN sigweb.parcelas p ON p.id = e.parcela_id ${whereSql}`,
+      params
+    )
+    return { data: rows, pagination: { page: Number(page), limit: Number(limit), total: Number(count) } }
+  })
 
   app.get('/edificacoes/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
@@ -79,6 +179,7 @@ export async function edificacoesRoutes(app: FastifyInstance) {
          RETURNING id`,
         params
       )
+      if (body.situacao === 'irregular') await notificarIrregularidade(row.id, request.user.uid)
       reply.code(201)
       return { id: row.id }
     }
@@ -105,6 +206,7 @@ export async function edificacoesRoutes(app: FastifyInstance) {
 
       params.push(id)
       await query(`UPDATE sigweb.edificacoes SET ${updates.join(', ')} WHERE id = $${i}`, params)
+      if (body.situacao === 'irregular') await notificarIrregularidade(id, request.user.uid)
       return { ok: true }
     }
   )
@@ -118,6 +220,40 @@ export async function edificacoesRoutes(app: FastifyInstance) {
       reply.code(204)
     }
   )
+
+  app.get('/edificacoes/export', async (request, reply) => {
+    const { format = 'csv' } = request.query as { format?: string }
+    if (!EXPORT_FORMATS.includes(format as ExportFormat)) {
+      return reply.code(400).send({ error: 'Formato inválido. Use csv, xml ou xlsx.' })
+    }
+
+    const rows = await query<Record<string, unknown>>(
+      `SELECT e.id, e.inscricao_imobiliaria, e.cadastro_imobiliario, e.area_construida,
+              e.parcela_id, e.proprietario_id, e.face_quadra, e.numero_predial, e.situacao
+       FROM sigweb.edificacoes e
+       ORDER BY e.created_at DESC`
+    )
+
+    const filename = `edificacoes.${format}`
+    if (format === 'csv') {
+      const csv = toCsv(rows)
+      reply.header('Content-Type', 'text/csv; charset=utf-8')
+      reply.header('Content-Disposition', `attachment; filename="${filename}"`)
+      return csv
+    }
+
+    if (format === 'xml') {
+      const xml = toXml('edificacoes', rows)
+      reply.header('Content-Type', 'application/xml; charset=utf-8')
+      reply.header('Content-Disposition', `attachment; filename="${filename}"`)
+      return xml
+    }
+
+    const buffer = toXlsx(rows)
+    reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    reply.header('Content-Disposition', `attachment; filename="${filename}"`)
+    return buffer
+  })
 
   // Importação em lote de BICs coletados pelos apps móveis
   app.post(

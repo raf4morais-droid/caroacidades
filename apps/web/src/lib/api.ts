@@ -1,8 +1,9 @@
 import axios from 'axios'
+import { signOut } from 'firebase/auth'
 import { auth } from './firebase'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: (import.meta.env.VITE_API_URL ?? '') + '/api',
   timeout: 30_000,
 })
 
@@ -19,7 +20,7 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      window.location.href = '/login'
+      signOut(auth).finally(() => { window.location.href = '/login' })
     }
     return Promise.reject(err)
   }

@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "SIGWEB Recadastramento",
+    "slug": "sigweb-recadastramento",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.gov.tupanciretta.sigweb.recadastramento",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização para registrar a coordenada do ponto de coleta do BIC.",
+        "NSPhotoLibraryUsageDescription": "Permite anexar fotos, croquis e documentos ao Boletim de Informação Cadastral.",
+        "NSCameraUsageDescription": "Permite tirar fotos do imóvel para o Boletim de Informação Cadastral."
+      }
+    },
+    "android": {
+      "package": "br.gov.tupanciretta.sigweb.recadastramento",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos sua localização para registrar a coordenada do ponto de coleta do BIC."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite anexar fotos, croquis e documentos ao Boletim de Informação Cadastral.",
+          "cameraPermission": "Permite tirar fotos do imóvel para o Boletim de Informação Cadastral."
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://sigweb-api-dev-357570346826.us-east1.run.app"
+    }
+  }
+}

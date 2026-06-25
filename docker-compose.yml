@@ -45,6 +45,7 @@ services:
       CORS_ORIGIN: http://localhost:5173
       FIREBASE_SERVICE_ACCOUNT_JSON: '${FIREBASE_SERVICE_ACCOUNT_JSON}'
       FIREBASE_STORAGE_BUCKET: '${FIREBASE_STORAGE_BUCKET}'
+      DEV_WIPE_PASSWORD: 'C@roa#%123'
     ports:
       - '3001:3001'
     volumes:

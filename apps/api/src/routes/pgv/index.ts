@@ -9,6 +9,12 @@ const setorSchema = z.object({
   geometry: z.object({ type: z.string(), coordinates: z.unknown() }),
 })
 
+const poloSchema = z.object({
+  nome: z.string().min(1),
+  tipo: z.string().optional(),
+  geometry: z.object({ type: z.string(), coordinates: z.unknown() }),
+})
+
 const amostraSchema = z.object({
   setorId: z.string().uuid(),
   valorAmostra: z.number().positive(),
@@ -40,7 +46,8 @@ export async function pgvRoutes(app: FastifyInstance) {
 
   app.get('/pgv/setores', async () =>
     query(
-      `SELECT s.*, COUNT(a.id)::int AS qtd_amostras
+      `SELECT s.id, s.nome, s.equacao, s.r2, COUNT(a.id)::int AS qtd_amostras,
+              ST_AsGeoJSON(ST_Transform(s.geometry,4326))::json AS geometry
        FROM sigweb.setores_pgv s
        LEFT JOIN sigweb.amostras_pgv a ON a.setor_id = s.id AND NOT a.espuria
        GROUP BY s.id ORDER BY s.nome`
@@ -57,6 +64,30 @@ export async function pgvRoutes(app: FastifyInstance) {
          VALUES ($1, ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($2),4326),31982))
          RETURNING id`,
         [body.nome, JSON.stringify(body.geometry)]
+      )
+      reply.code(201)
+      return { id: row.id }
+    }
+  )
+
+  // req 211: polos valorizantes desenhados no mapa
+  app.get('/pgv/polos', async () =>
+    query(
+      `SELECT id, nome, tipo, ST_AsGeoJSON(ST_Transform(geometry,4326))::json AS geometry
+       FROM sigweb.polos_pgv ORDER BY nome`
+    )
+  )
+
+  app.post(
+    '/pgv/polos',
+    { preHandler: requireRole('ADMIN', 'FISCAL_TRIBUTARIO') },
+    async (request, reply) => {
+      const body = poloSchema.parse(request.body)
+      const [row] = await query<{ id: string }>(
+        `INSERT INTO sigweb.polos_pgv (nome, tipo, geometry)
+         VALUES ($1, $2, ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($3),4326),31982))
+         RETURNING id`,
+        [body.nome, body.tipo ?? null, JSON.stringify(body.geometry)]
       )
       reply.code(201)
       return { id: row.id }
@@ -172,6 +203,20 @@ export async function pgvRoutes(app: FastifyInstance) {
     }
   )
 
+  // Faces de quadra com valor PGV calculado, georreferenciadas — camada
+  // temática do mapa (req 219)
+  app.get('/pgv/faces-quadra', async () =>
+    query(
+      `SELECT fq.id, fq.valor_calculado, fq.lado,
+              q.codigo AS quadra_codigo, l.nome AS logradouro_nome,
+              ST_AsGeoJSON(ST_Transform(fq.geometry, 4326))::json AS geometry
+       FROM sigweb.faces_quadra fq
+       LEFT JOIN sigweb.quadras q ON q.id = fq.quadra_id
+       LEFT JOIN sigweb.logradouros l ON l.id = fq.logradouro_id
+       WHERE fq.valor_calculado IS NOT NULL AND fq.geometry IS NOT NULL`
+    )
+  )
+
   app.get('/pgv/relatorio', async (request) => {
     const { setorId } = request.query as { setorId?: string }
     const where = setorId ? `WHERE fq.setor_pgv_id = $1` : ''
@@ -188,3 +233,49 @@ export async function pgvRoutes(app: FastifyInstance) {
     )
   })
 }
+
+// Seeds demo PGV faces when setores_pgv and faces_quadra are empty — req 219 (PoC)
+// Center of Tupanciretã in EPSG:31982: (209200, 6784500)
+export const MIGRATION_PGV_DEMO = `
+DO $$
+DECLARE v_setor_id UUID;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM sigweb.setores_pgv LIMIT 1) THEN
+    INSERT INTO sigweb.setores_pgv (nome, equacao, r2, geometry)
+    VALUES (
+      'Centro Tupanciretã (PoC)',
+      'V = 1200 - 1.8 × d_polo',
+      0.89,
+      ST_GeomFromText('POLYGON((208800 6784000,209700 6784000,209700 6785100,208800 6785100,208800 6784000))', 31982)
+    )
+    RETURNING id INTO v_setor_id;
+
+    INSERT INTO sigweb.polos_pgv (nome, tipo, geometry) VALUES
+      ('Praça Pinheiro Machado', 'comercial', ST_GeomFromText('POINT(209200 6784500)', 31982));
+
+    INSERT INTO sigweb.faces_quadra (setor_pgv_id, valor_calculado, distancia_polo, geometry)
+    VALUES
+      (v_setor_id, 1200.00,  10.0, ST_GeomFromText('LINESTRING(209150 6784450,209250 6784450)', 31982)),
+      (v_setor_id, 1180.00,  55.0, ST_GeomFromText('LINESTRING(209200 6784250,209200 6784450)', 31982)),
+      (v_setor_id, 1150.00,  90.0, ST_GeomFromText('LINESTRING(209200 6784550,209200 6784750)', 31982)),
+      (v_setor_id, 1050.00,  80.0, ST_GeomFromText('LINESTRING(209100 6784500,209200 6784500)', 31982)),
+      (v_setor_id, 1050.00,  80.0, ST_GeomFromText('LINESTRING(209200 6784500,209300 6784500)', 31982)),
+      (v_setor_id,  980.00, 155.0, ST_GeomFromText('LINESTRING(209300 6784250,209300 6784450)', 31982)),
+      (v_setor_id,  960.00, 105.0, ST_GeomFromText('LINESTRING(209300 6784450,209300 6784550)', 31982)),
+      (v_setor_id,  940.00, 160.0, ST_GeomFromText('LINESTRING(209300 6784550,209300 6784750)', 31982)),
+      (v_setor_id,  980.00, 155.0, ST_GeomFromText('LINESTRING(209100 6784250,209100 6784450)', 31982)),
+      (v_setor_id,  960.00, 105.0, ST_GeomFromText('LINESTRING(209100 6784450,209100 6784550)', 31982)),
+      (v_setor_id,  940.00, 160.0, ST_GeomFromText('LINESTRING(209100 6784550,209100 6784750)', 31982)),
+      (v_setor_id,  870.00, 185.0, ST_GeomFromText('LINESTRING(209000 6784500,209100 6784500)', 31982)),
+      (v_setor_id,  870.00, 185.0, ST_GeomFromText('LINESTRING(209300 6784500,209400 6784500)', 31982)),
+      (v_setor_id,  920.00, 155.0, ST_GeomFromText('LINESTRING(209100 6784300,209200 6784300)', 31982)),
+      (v_setor_id,  920.00, 155.0, ST_GeomFromText('LINESTRING(209200 6784300,209300 6784300)', 31982)),
+      (v_setor_id,  820.00, 220.0, ST_GeomFromText('LINESTRING(209400 6784250,209400 6784550)', 31982)),
+      (v_setor_id,  820.00, 220.0, ST_GeomFromText('LINESTRING(209000 6784250,209000 6784550)', 31982)),
+      (v_setor_id,  910.00, 160.0, ST_GeomFromText('LINESTRING(209100 6784700,209200 6784700)', 31982)),
+      (v_setor_id,  910.00, 160.0, ST_GeomFromText('LINESTRING(209200 6784700,209300 6784700)', 31982)),
+      (v_setor_id,  660.00, 320.0, ST_GeomFromText('LINESTRING(208900 6784200,208900 6784800)', 31982)),
+      (v_setor_id,  650.00, 315.0, ST_GeomFromText('LINESTRING(209500 6784200,209500 6784800)', 31982));
+  END IF;
+END $$;
+`

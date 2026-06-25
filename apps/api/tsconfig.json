@@ -10,10 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "paths": {
-      "@sigweb/shared": ["../../packages/shared/src"]
-    }
+    "declaration": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

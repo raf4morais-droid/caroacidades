@@ -7,7 +7,7 @@ terraform {
     }
   }
   backend "gcs" {
-    bucket = "sigweb-tupancireta-tfstate"
+    bucket = "caroacidadesinteligentes-tfstate"
     prefix = "terraform/state"
   }
 }

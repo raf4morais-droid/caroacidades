@@ -1,0 +1,93 @@
+import { useState } from 'react'
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  KeyboardAvoidingView, Platform, ActivityIndicator,
+} from 'react-native'
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { auth } from '../lib/firebase'
+import { isFiscalCampo } from '../contexts/AuthContext'
+
+// Login do fiscal de campo — credenciais configuradas pelo sistema, sem auto-cadastro (req 169)
+export function LoginScreen() {
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function entrar() {
+    setErro(null)
+    if (!email || !senha) { setErro('Informe e-mail e senha.'); return }
+    setLoading(true)
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), senha)
+      const tokenResult = await cred.user.getIdTokenResult()
+      const perfil = (tokenResult.claims.perfil as string | undefined) ?? null
+      if (!isFiscalCampo(perfil)) {
+        await signOut(auth)
+        setErro('Este aplicativo é exclusivo para fiscais de campo da prefeitura.')
+      }
+    } catch (err: any) {
+      setErro(traduzErro(err?.code))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.container}>
+        <Text style={styles.titulo}>SIGWEB Arborização</Text>
+        <Text style={styles.subtitulo}>Coleta de campo — Fiscalização da Arborização Urbana</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="E-mail"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Senha"
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry
+        />
+
+        {erro && <Text style={styles.erro}>{erro}</Text>}
+
+        <TouchableOpacity style={styles.botao} onPress={entrar} disabled={loading}>
+          {loading ? <ActivityIndicator color="white" /> : <Text style={styles.botaoTexto}>Entrar</Text>}
+        </TouchableOpacity>
+
+        <Text style={styles.aviso}>Suas credenciais de acesso são fornecidas pela prefeitura.</Text>
+      </View>
+    </KeyboardAvoidingView>
+  )
+}
+
+function traduzErro(code?: string) {
+  switch (code) {
+    case 'auth/invalid-email': return 'E-mail inválido.'
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found': return 'E-mail ou senha incorretos.'
+    default: return 'Não foi possível entrar. Tente novamente.'
+  }
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f0f7f1' },
+  titulo: { fontSize: 24, fontWeight: '700', color: '#1f4d2c', textAlign: 'center' },
+  subtitulo: { fontSize: 13, color: '#6b7280', textAlign: 'center', marginBottom: 28 },
+  input: {
+    backgroundColor: 'white', borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginBottom: 12,
+  },
+  erro: { color: '#dc2626', fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  botao: { backgroundColor: '#1f4d2c', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
+  botaoTexto: { color: 'white', fontSize: 16, fontWeight: '700' },
+  aviso: { fontSize: 12, color: '#9ca3af', textAlign: 'center', marginTop: 20 },
+})

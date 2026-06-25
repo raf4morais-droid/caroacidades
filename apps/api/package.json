@@ -10,19 +10,23 @@
     "seed": "node -e \"require('./src/db/seed')\""
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.9.0",
-    "fastify": "^4.27.0",
     "@fastify/cors": "^9.0.1",
     "@fastify/helmet": "^11.1.1",
     "@fastify/multipart": "^8.3.0",
     "@fastify/rate-limit": "^9.1.0",
+    "@fastify/static": "^7.0.4",
+    "@google-cloud/storage": "^7.9.0",
+    "@sigweb/shared": "*",
+    "fastify": "^4.27.0",
     "firebase-admin": "^12.1.0",
+    "jspdf": "^2.5.1",
+    "jszip": "^3.10.1",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.11.5",
     "pino": "^9.1.0",
-    "jspdf": "^2.5.1",
+    "shapefile": "^0.6.6",
     "xlsx": "^0.18.5",
-    "zod": "^3.23.6",
-    "@sigweb/shared": "*"
+    "zod": "^3.23.6"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",

@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "SIGWEB Arborização",
+    "slug": "sigweb-arborizacao",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.gov.tupanciretta.sigweb.arborizacao",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização para registrar a coordenada de coleta da árvore.",
+        "NSPhotoLibraryUsageDescription": "Permite anexar fotos da árvore e da calçada ao registro.",
+        "NSCameraUsageDescription": "Permite tirar fotos da árvore e da calçada para o registro."
+      }
+    },
+    "android": {
+      "package": "br.gov.tupanciretta.sigweb.arborizacao",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos sua localização para registrar a coordenada de coleta da árvore."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite anexar fotos da árvore e da calçada ao registro.",
+          "cameraPermission": "Permite tirar fotos da árvore e da calçada para o registro."
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://sigweb-api-dev-357570346826.us-east1.run.app"
+    }
+  }
+}

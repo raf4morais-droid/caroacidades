@@ -84,6 +84,8 @@ CREATE TABLE parcelas (
   logradouro_id       UUID REFERENCES logradouros(id),
   loteamento_id       UUID REFERENCES loteamentos(id),
   quadra_id           UUID REFERENCES quadras(id),
+  camada_id           UUID,
+  atributos           JSONB NOT NULL DEFAULT '{}',
   geometry            GEOMETRY(POLYGON, 31982),
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
