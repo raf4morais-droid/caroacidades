@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "caroacidadesinteligentes",
+    "site": "caroacidades",
     "public": "apps/web/dist",
     "ignore": [
       "firebase.json",

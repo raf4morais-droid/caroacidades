@@ -1,12 +1,5 @@
 {
   "projects": {
-    "default": "caroacidadesinteligentes"
-  },
-  "targets": {
-    "caroacidadesinteligentes": {
-      "hosting": {
-        "app": ["caroacidadesinteligentes"]
-      }
-    }
+    "default": "caroacidades"
   }
 }
